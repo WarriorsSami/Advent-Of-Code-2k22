@@ -1,46 +1,39 @@
-use std::cmp::max;
+use std::num::ParseIntError;
+use sorted_vec::partial::ReverseSortedVec;
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let mut curr_sum = 0u32;
+fn vec_from(input: &str) -> Vec<u32> {
     input
         .lines()
-        .fold(Some(0u32), |acc, line| {
-            match line.parse::<u32>() {
-                Ok(num) => {
-                    curr_sum += num;
-                    acc
-                }
-                Err(_) => {
-                    let result = acc.map(|acc| max(acc, curr_sum));
-                    curr_sum = 0;
-                    result
-                }
-            }
-        })
+        .map(|line| line.parse::<u32>())
+        .collect::<Vec<Result<u32, ParseIntError>>>()
+        .split(|element| element.is_err())
+        .map(|slice|
+            slice
+                .iter()
+                .map(|element|
+                    element
+                        .as_ref()
+                        .unwrap()
+                )
+                .sum()
+        )
+        .collect::<Vec<u32>>()
+}
+
+pub fn part_one(input: &str) -> Option<u32> {
+    vec_from(input)
+        .iter()
+        .max()
+        .copied()
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut curr_sum = 0u32;
-    let mut answer = input
-        .lines()
-        .map(|line| {
-            match line.parse::<u32>() {
-                Ok(num) => {
-                    curr_sum += num;
-                    0
-                }
-                Err(_) => {
-                    let result = curr_sum;
-                    curr_sum = 0;
-                    result
-                }
-            }
-        })
-        .collect::<Vec<u32>>();
-    answer.push(curr_sum);
-    answer.sort_by(|a, b| b.cmp(a));
-
-    Some(answer[0..3].iter().sum::<u32>())
+    let unsorted_vec = vec_from(input).to_vec();
+    ReverseSortedVec::from_unsorted(unsorted_vec)
+        .iter()
+        .take(3)
+        .sum::<u32>()
+        .into()
 }
 
 fn main() {
