@@ -1,29 +1,33 @@
-use std::collections::HashMap;
+use phf::phf_map;
+
+static MOVES: phf::Map<char, i32> = phf_map! {
+    'A' => 1,
+    'B' => 2,
+    'C' => 3,
+    'X' => 1,
+    'Y' => 2,
+    'Z' => 3,
+};
 
 // Rock-Paper-Scissors
 // A-B-C
 // X-Y-Z
+// 1-2-3
 // X(1), Y(2), Z(3)
 // lose(0), draw(3), win(6)
-fn get_combinations_part_one() -> HashMap<String, u32> {
-    let mut combinations = HashMap::new();
-    combinations.insert(String::from("A X"), 4);
-    combinations.insert(String::from("A Y"), 8);
-    combinations.insert(String::from("A Z"), 3);
-    combinations.insert(String::from("B X"), 1);
-    combinations.insert(String::from("B Y"), 5);
-    combinations.insert(String::from("B Z"), 9);
-    combinations.insert(String::from("C X"), 7);
-    combinations.insert(String::from("C Y"), 2);
-    combinations.insert(String::from("C Z"), 6);
-    combinations
+fn get_score_part_one(foe: char, me: char) -> i32 {
+    let game_status = (MOVES[&me] - MOVES[&foe] + 1).rem_euclid(3);
+    MOVES[&me] + game_status * 3
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let combinations = get_combinations_part_one();
     input
         .lines()
-        .map(|line| combinations.get(line).unwrap())
+        .map(|line| {
+            let foe = line.chars().next().unwrap();
+            let me = line.chars().nth(2).unwrap();
+            get_score_part_one(foe, me) as u32
+        })
         .sum::<u32>()
         .into()
 }
@@ -34,25 +38,33 @@ pub fn part_one(input: &str) -> Option<u32> {
 // A(1), B(2), C(3)
 // X(lose), Y(draw), Z(win)
 // lose(0), draw(3), win(6)
-fn get_combinations_part_two() -> HashMap<String, u32> {
-    let mut combinations = HashMap::new();
-    combinations.insert(String::from("A X"), 3); // lose against rock with scissors
-    combinations.insert(String::from("A Y"), 4); // draw against rock with rock
-    combinations.insert(String::from("A Z"), 8); // win against rock with paper
-    combinations.insert(String::from("B X"), 1); // lose against paper with rock
-    combinations.insert(String::from("B Y"), 5); // draw against paper with paper
-    combinations.insert(String::from("B Z"), 9); // win against paper with scissors
-    combinations.insert(String::from("C X"), 2); // lose against scissors with paper
-    combinations.insert(String::from("C Y"), 6); // draw against scissors with scissors
-    combinations.insert(String::from("C Z"), 7); // win against scissors with rock
-    combinations
+// 1 -> 2, 2 -> 3, 3 -> 1 (win)
+// 1 -> 3, 2 -> 1, 3 -> 2 (lose)
+fn get_score_part_two(foe: char, me: char) -> i32 {
+    let game_status = (MOVES[&me] + 2) % 3;
+    let move_score = match game_status {
+        0 => match MOVES[&foe] - 1 {
+            0 => 3,
+            x => x,
+        },
+        1 => MOVES[&foe],
+        2 => match (MOVES[&foe] + 1) % 3 {
+            0 => 3,
+            x => x,
+        },
+        _ => panic!("Invalid game status"),
+    };
+    game_status * 3 + move_score
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let combinations = get_combinations_part_two();
     input
         .lines()
-        .map(|line| combinations.get(line).unwrap())
+        .map(|line| {
+            let foe = line.chars().next().unwrap();
+            let me = line.chars().nth(2).unwrap();
+            get_score_part_two(foe, me) as u32
+        })
         .sum::<u32>()
         .into()
 }
